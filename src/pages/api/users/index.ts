@@ -1,16 +1,25 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { sampleUserData } from '../../../utils/sample-data'
+import { NextApiRequest, NextApiResponse } from 'next';
+import { connectToDatabase } from '../../../utils/mongodb';
 
-const handler = (_req: NextApiRequest, res: NextApiResponse) => {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    if (!Array.isArray(sampleUserData)) {
-      throw new Error('Cannot find user data')
+    const { method } = req;
+
+    switch (method) {
+      case 'GET':
+        // acesso ao mongodb e obter os usuarios do meu banco
+        const { db } = await connectToDatabase();
+        const data = await db.collection('user').find().toArray();
+
+        res.status(200).json(data);
+        break;
+      default:
+        res.setHeader('Allow', ['GET', 'PUT']);
+        res.status(405).end(`Method ${method} Not Allowed`);
     }
-
-    res.status(200).json(sampleUserData)
   } catch (err) {
-    res.status(500).json({ statusCode: 500, message: err.message })
+    res.status(500).json({ statusCode: 500, message: err.message });
   }
-}
+};
 
-export default handler
+export default handler;
